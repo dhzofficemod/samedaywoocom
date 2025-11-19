@@ -664,6 +664,9 @@ class Sameday
             $awb = $sameday->postAwb($request);
         } catch (SamedayBadRequestException $e) {
             $errors = $e->getErrors();
+            error_log('=== SAMEDAY BAD REQUEST DEBUG ===');
+            error_log('Raw Response: ' . $e->getRawResponse()->getBody());
+
             if ($errors !== '') {
                 try {
 					$rawResponse = $e->getRawResponse()->getBody();
@@ -683,7 +686,10 @@ class Sameday
                 }
             }
         } catch (SamedayOtherException $exception) {
+            error_log('=== SAMEDAY OTHER EXCEPTION DEBUG ===');
             $error = $exception->getRawResponse()->getBody();
+            error_log('Raw Response: ' . $error);
+
             if (null !== $error && '' !== $error) {
                 $error = json_decode($error, true, 512, JSON_THROW_ON_ERROR);
             }
@@ -693,8 +699,20 @@ class Sameday
             }
         } catch (Exception $e) {
             $message = $e->getMessage();
+
+            // Log complete error details for debugging
+            error_log('=== SAMEDAY AWB ERROR DEBUG ===');
+            error_log('Exception Class: ' . get_class($e));
+            error_log('Message: ' . $message);
+            error_log('Code: ' . $e->getCode());
+            error_log('Trace: ' . $e->getTraceAsString());
+
+            if (method_exists($e, 'getRawResponse')) {
+                error_log('Raw Response: ' . $e->getRawResponse()->getBody());
+            }
+
             if ('' === $message) {
-                $message = 'The request could not be processed!';
+                $message = 'The request could not be processed! Check error_log for details.';
             }
 			$errors[] = [
                 'code' => $e->getCode(),
